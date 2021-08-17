@@ -72,10 +72,10 @@ public class Analyzer {
                 }
             }
             if (sheet.getRow(i).getCell(2) != null){
-                if (winningCards.containsKey(sheet.getRow(i).getCell(2).toString())){
-                    winningCards.put(sheet.getRow(i).getCell(2).toString(), winningCards.get(sheet.getRow(i).getCell(2).toString()) + 1);
+                if (losingCards.containsKey(sheet.getRow(i).getCell(2).toString())){
+                    losingCards.put(sheet.getRow(i).getCell(2).toString(), winningCards.get(sheet.getRow(i).getCell(2).toString()) + 1);
                 } else {
-                    winningCards.put(sheet.getRow(i).getCell(2).toString(), 1);
+                    losingCards.put(sheet.getRow(i).getCell(2).toString(), 1);
                 }
             }
         }
@@ -161,7 +161,9 @@ public class Analyzer {
                 rowMarker++;
             } else {
                 dataSheet.getRow(rowMarker).createCell(6).setCellValue(entry.getKey());
-                dataSheet.getRow(rowMarker).createCell(7).setCellValue(entry.getValue() / numOfLosingDecks);
+                double lossPercentage = (double) (entry.getValue() / (double) numOfLosingDecks);
+                dataSheet.getRow(rowMarker).createCell(7).setCellValue(lossPercentage);
+                rowMarker++;
             }
         }
     }
