@@ -29,7 +29,7 @@ public class Analyzer {
         HashMap<String, Integer> losingCardsList = new HashMap<String, Integer>(); // the value of each item will be the number of times it has won/lost or appeared in a winning/losing list, and the key will be its name
         HashMap<String, Integer> winningDecksList = new HashMap<String, Integer>();
         HashMap<String, Integer> losingDecksList = new HashMap<String, Integer>();
-        for (int i = 1; i < workbook.getNumberOfSheets(); i++) {
+        for (int i = 1; i < workbook.getNumberOfSheets(); i++) { // go through each sheet and read the deck names and lists on it
             readDeckNames(workbook.getSheetAt(i), winningDecksList, losingDecksList);
             readDeckLists(workbook.getSheetAt(i), winningCardsList, losingCardsList);
         }
@@ -50,10 +50,11 @@ public class Analyzer {
                //if hashmap already has deck, increment value by 1, if not make a new entry
                // calling the reArrangeStringColorIdentity method here in case we're reading an excel sheet that hasn't been created by the program, and therefore hasn't had its colors rearrranged
            } else {
+               // if the deck isn't already in the hashmap of winning decks, put it in there with a value of 1
                winningDecks.put((reArrangeStringColorIdentity(sheet.getRow(0).getCell(0).toString())),1);
            }
         }
-        if (sheet.getRow(0).getCell(2) != null){ // again, checking to see if there's an archetype name there
+        if (sheet.getRow(0).getCell(2) != null){ // again, checking to see if there's an archetype name there -- if there is one, it means that there's a losing decklist to read
             if (losingDecks.containsKey((reArrangeStringColorIdentity(sheet.getRow(0).getCell(2).toString())))){
                 winningDecks.put(reArrangeStringColorIdentity(sheet.getRow(0).getCell(2).toString()), winningDecks.get((reArrangeStringColorIdentity(sheet.getRow(0).getCell(2).toString()))+1));
             } else {
@@ -101,8 +102,8 @@ public class Analyzer {
 
     public void writeWinningDecks(XSSFSheet dataSheet, HashMap<String, Integer> winningDecks){
         int rowMarker = 1; // starting at the first(second) row, since the 0th(first) was already used for column headers
-        int numOfWinningDecks = countNumberOfWinningDecks(winningDecks);
-        for (Map.Entry<String, Integer> entry : winningDecks.entrySet()) {
+        int numOfWinningDecks = countNumberOfWinningDecks(winningDecks); // this is so we can write percentage of times a deck has won
+        for (Map.Entry<String, Integer> entry : winningDecks.entrySet()) { // since this is the very first thing we do, no need to check if rows already exist
             Row currentRow = dataSheet.createRow(rowMarker); // since writeWinningDecks is the first of the write methods to be called, no need to check to see if a row already exists
             currentRow.createCell(0).setCellValue(entry.getKey());
             double winPercentage = (double) (entry.getValue() / (double) numOfWinningDecks); // casting everything as doubles so that we get a decimal win percentage
@@ -134,13 +135,13 @@ public class Analyzer {
         int rowMarker = 1; //doing the same thing that we've done in writeLosingDecks, using rowMarker to track our progress through the sheet
         int numOfWinningDecks = countNumberOfWinningDecks(winningDecks);
         for (Map.Entry<String, Integer> entry : winningCards.entrySet()) {
-            if(dataSheet.getRow(rowMarker) == null) {
+            if(dataSheet.getRow(rowMarker) == null) { // if there isn't already a row created, create a new row and then write in the data
                 Row currentRow = dataSheet.createRow(rowMarker);
                 currentRow.createCell(4).setCellValue(entry.getKey());
                 double winPercentage = (double) (entry.getValue() / (double) numOfWinningDecks);
                 currentRow.createCell(5).setCellValue(winPercentage);
-                rowMarker++;
-            } else {
+                rowMarker++; // incremenent rowMarker so that we move down on the spreadsheet
+            } else { // if there's already a row created, just write in the data
                 dataSheet.getRow(rowMarker).createCell(4).setCellValue(entry.getKey());
                 double winPercentage = (double) entry.getValue() / (double) numOfWinningDecks;
                 dataSheet.getRow(rowMarker).createCell(5).setCellValue(winPercentage);
@@ -149,17 +150,19 @@ public class Analyzer {
         }
     }
 
+    // writes the cards that appeared in losing decklists on the data sheet, drawing from the hashmap losingCards
+    // uses losingDecks to count how many losing decklists there are, which allows us to determine the losing percentage of each card
     public void writelosingCards(XSSFSheet dataSheet, HashMap<String, Integer> losingCards, HashMap<String, Integer> losingDecks){
         int rowMarker = 1;
         int numOfLosingDecks = countNumberOfLosingDecks(losingDecks);
         for (Map.Entry<String, Integer> entry : losingCards.entrySet()) {
-            if(dataSheet.getRow(rowMarker) == null) {
+            if(dataSheet.getRow(rowMarker) == null) { // if there isn't already a row at the appropriate position, create one and then write in the data
                 Row currentRow = dataSheet.createRow(rowMarker);
                 currentRow.createCell(6).setCellValue(entry.getKey());
                 double lossPercentage = (double) (entry.getValue() / (double) numOfLosingDecks);
                 currentRow.createCell(7).setCellValue(lossPercentage);
                 rowMarker++;
-            } else {
+            } else { // if there is already a row created, just write in the data
                 dataSheet.getRow(rowMarker).createCell(6).setCellValue(entry.getKey());
                 double lossPercentage = (double) (entry.getValue() / (double) numOfLosingDecks);
                 dataSheet.getRow(rowMarker).createCell(7).setCellValue(lossPercentage);
@@ -168,7 +171,7 @@ public class Analyzer {
         }
     }
 
-    public int countNumberOfWinningDecks(HashMap<String, Integer> winningDecks){ // simple method that goes through a provided HashMap
+    public int countNumberOfWinningDecks(HashMap<String, Integer> winningDecks){ // simple method that goes through a provided HashMap and counts number of ocurrences of each deck
         int deckCount = 0;
         for (Map.Entry<String, Integer> deck: winningDecks.entrySet()) {
             deckCount = deckCount + deck.getValue();
@@ -178,7 +181,7 @@ public class Analyzer {
         return deckCount;
     }
 
-    public int countNumberOfLosingDecks(HashMap<String, Integer> losingDecks){
+    public int countNumberOfLosingDecks(HashMap<String, Integer> losingDecks){ // same thing as with previous method
         int deckCount = 0;
         for (Map.Entry<String, Integer> deck: losingDecks.entrySet()) {
             deckCount = deckCount + deck.getValue();
@@ -186,6 +189,7 @@ public class Analyzer {
         return deckCount;
     }
 
+    // helper method that sorts a hashmap by value, which allows us to display winning/losing cards/decks by order of prevalence
     public static HashMap<String, Integer> sortByValue(HashMap<String, Integer> hm)
     { // taken from https://www.geeksforgeeks.org/sorting-a-hashmap-according-to-values/
         // Create a list from elements of HashMap
@@ -209,6 +213,7 @@ public class Analyzer {
         return temp;
     }
 
+    // helper method that arranges color identity at the start of a deck name alphabetically, meaning URW and UWR decks will be grouped in the same category
     public String reArrangeStringColorIdentity(String deckName){
         String[] nameArray = deckName.split(" ");
         char[] colorIdentity = nameArray[0].toCharArray();

@@ -3,6 +3,7 @@ package com.company;
 import java.util.ArrayList;
 
 public class NightReport {
+    // NightReport holds the winning and losing decklists from each session
 
     public Decklist getWinningDeck() {
         return winningDeck;
