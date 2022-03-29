@@ -29,6 +29,7 @@ public class Analyzer {
         HashMap<String, Integer> losingCardsList = new HashMap<String, Integer>(); // the value of each item will be the number of times it has won/lost or appeared in a winning/losing list, and the key will be its name
         HashMap<String, Integer> winningDecksList = new HashMap<String, Integer>();
         HashMap<String, Integer> losingDecksList = new HashMap<String, Integer>();
+        System.out.println(workbook.getNumberOfSheets());
         for (int i = 1; i < workbook.getNumberOfSheets(); i++) { // go through each sheet and read the deck names and lists on it
             readDeckNames(workbook.getSheetAt(i), winningDecksList, losingDecksList);
             readDeckLists(workbook.getSheetAt(i), winningCardsList, losingCardsList);
@@ -44,24 +45,51 @@ public class Analyzer {
     }
 
     public void readDeckNames(XSSFSheet sheet, HashMap<String, Integer> winningDecks, HashMap<String, Integer> losingDecks){
-        if (sheet.getRow(0).getCell(0) != null){ // first check to see if there's actually an archetype name there
-           if (winningDecks.containsKey(reArrangeStringColorIdentity(sheet.getRow(0).getCell(0).toString()))){
-               winningDecks.put(reArrangeStringColorIdentity(sheet.getRow(0).getCell(0).toString()), winningDecks.get((reArrangeStringColorIdentity(sheet.getRow(0).getCell(0).toString())+1)));
-               //if hashmap already has deck, increment value by 1, if not make a new entry
-               // calling the reArrangeStringColorIdentity method here in case we're reading an excel sheet that hasn't been created by the program, and therefore hasn't had its colors rearrranged
-           } else {
-               // if the deck isn't already in the hashmap of winning decks, put it in there with a value of 1
-               winningDecks.put((reArrangeStringColorIdentity(sheet.getRow(0).getCell(0).toString())),1);
-           }
+        if (sheet.getRow(0).getCell(0) != null) { // first check to see if there's actually an archetype name there
+            if (sheet.getRow(0).getCell(0).toString().contains("/")) { //check to see if there was a tie and two decks are declared winning decks
+                Decklist winningLists = new Decklist();
+                winningLists.setArchetypeName(sheet.getRow(0).getCell(0).toString());
+                winningLists.rearrangeColorIdentity();
+                if (winningDecks.containsKey(winningLists.getFirstDeckName())){
+                    winningDecks.put((winningLists.getFirstDeckName()), winningDecks.get((winningLists.getFirstDeckName()) + 1));
+                } else {
+                    winningDecks.put(winningLists.getFirstDeckName(), 1);
+                }
+                if (winningDecks.containsKey(winningLists.getSecondDeckName())){
+                    winningDecks.put((winningLists.getSecondDeckName()), winningDecks.get((winningLists.getSecondDeckName()) + 1));
+                } else {
+                    winningDecks.put((winningLists.getSecondDeckName()), 1);
+                }
+                } else if (winningDecks.containsKey(reArrangeStringColorIdentity(sheet.getRow(0).getCell(0).toString()))) {
+                    winningDecks.put(reArrangeStringColorIdentity(sheet.getRow(0).getCell(0).toString()), winningDecks.get((reArrangeStringColorIdentity(sheet.getRow(0).getCell(0).toString()) + 1)));
+                    //if hashmap already has deck, increment value by 1, if not make a new entry
+                    // calling the reArrangeStringColorIdentity method here in case we're reading an excel sheet that hasn't been created by the program, and therefore hasn't had its colors rearrranged
+                } else {
+                    // if the deck isn't already in the hashmap of winning decks, put it in there with a value of 1
+                    winningDecks.put((reArrangeStringColorIdentity(sheet.getRow(0).getCell(0).toString())), 1);
+                }
         }
-        if (sheet.getRow(0).getCell(2) != null){ // again, checking to see if there's an archetype name there -- if there is one, it means that there's a losing decklist to read
-            if (losingDecks.containsKey((reArrangeStringColorIdentity(sheet.getRow(0).getCell(2).toString())))){
-                winningDecks.put(reArrangeStringColorIdentity(sheet.getRow(0).getCell(2).toString()), winningDecks.get((reArrangeStringColorIdentity(sheet.getRow(0).getCell(2).toString()))+1));
-            } else {
-                losingDecks.put((reArrangeStringColorIdentity(sheet.getRow(0).getCell(2).toString())),1);
+        if (sheet.getRow(0).getCell(2) != null) { // again, checking to see if there's an archetype name there -- if there is one, it means that there's a losing decklist to read
+            if (sheet.getRow(0).getCell(2).toString().contains("/")) { //check to see if there was a tie and two decks are declared winning decks
+                Decklist losingLists = new Decklist();
+                losingLists.setArchetypeName(sheet.getRow(0).getCell(2).toString());
+                losingLists.rearrangeColorIdentity();
+                if (losingDecks.containsKey(losingLists.getFirstDeckName())) {
+                    losingDecks.put(losingLists.getFirstDeckName(), losingDecks.get(losingLists.getFirstDeckName()) + 1);
+                } else {
+                    losingDecks.put(losingLists.getFirstDeckName(), 1);
+                } if (losingDecks.containsKey(losingLists.getSecondDeckName())){
+                    losingDecks.put((losingLists.getSecondDeckName()), losingDecks.get((losingLists.getSecondDeckName()) + 1));
+                } else {
+                    losingDecks.put((losingLists.getSecondDeckName()), 1);
+                }
+            } else if (losingDecks.containsKey((reArrangeStringColorIdentity(sheet.getRow(0).getCell(2).toString())))) {
+                    losingDecks.put(reArrangeStringColorIdentity(sheet.getRow(0).getCell(2).toString()), losingDecks.get((reArrangeStringColorIdentity(sheet.getRow(0).getCell(2).toString())) + 1));
+                } else {
+                    losingDecks.put((reArrangeStringColorIdentity(sheet.getRow(0).getCell(2).toString())), 1);
+                }
             }
         }
-    }
 
     public void readDeckLists(XSSFSheet sheet, HashMap<String, Integer> winningCards, HashMap<String, Integer> losingCards){
         for (int i = 1; i < sheet.getPhysicalNumberOfRows(); i++) {
@@ -73,11 +101,11 @@ public class Analyzer {
                 }
             }
             if (sheet.getRow(i).getCell(2) != null){
-                if (losingCards.containsKey(sheet.getRow(i).getCell(2).toString())){
-                    losingCards.put(sheet.getRow(i).getCell(2).toString(), winningCards.get(sheet.getRow(i).getCell(2).toString()) + 1);
-                } else {
-                    losingCards.put(sheet.getRow(i).getCell(2).toString(), 1);
-                }
+                    if (losingCards.containsKey(sheet.getRow(i).getCell(2).toString())) {
+                        losingCards.put(sheet.getRow(i).getCell(2).toString(), losingCards.get(sheet.getRow(i).getCell(2).toString()) + 1);
+                    } else {
+                        losingCards.put(sheet.getRow(i).getCell(2).toString(), 1);
+                    }
             }
         }
     }
@@ -197,7 +225,7 @@ public class Analyzer {
                 new LinkedList<Map.Entry<String, Integer> >(hm.entrySet());
 
         // Sort the list
-        Collections.sort(list, new Comparator<Map.Entry<String, Integer> >() {
+        Collections.sort(list, new Comparator<Map.Entry<String, Integer>>() {
             public int compare(Map.Entry<String, Integer> o1,
                                Map.Entry<String, Integer> o2)
             {
@@ -214,7 +242,7 @@ public class Analyzer {
     }
 
     // helper method that arranges color identity at the start of a deck name alphabetically, meaning URW and UWR decks will be grouped in the same category
-    public String reArrangeStringColorIdentity(String deckName){
+    public static String reArrangeStringColorIdentity(String deckName){
         String[] nameArray = deckName.split(" ");
         char[] colorIdentity = nameArray[0].toCharArray();
         Arrays.sort(colorIdentity);
